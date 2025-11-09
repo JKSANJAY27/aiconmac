@@ -5,7 +5,7 @@ import AdminLayout from '@/components/layout/AdminLayout';
 import { useAuth } from '@/context/AuthContext';
 import React, { useState, useEffect } from 'react';
 import api from '@/lib/api';
-import { CheckCircle, XCircle, Trash2, X, Edit } from 'lucide-react';
+import { CheckCircle, XCircle, Trash2, X, Edit, PlusCircle } from 'lucide-react';
 import { useForm, SubmitHandler } from 'react-hook-form';
 import { z } from 'zod';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -97,7 +97,7 @@ export default function TestimonialsPage() {
         await api.put(`/testimonials/${editingTestimonial.id}`, data);
       } else {
         // If an admin/editor needs to manually create, uncomment and handle this
-        // await api.post('/testimonials', data);
+        await api.post('/testimonials', data);
       }
       fetchTestimonials();
       closeModal();
@@ -155,14 +155,14 @@ export default function TestimonialsPage() {
       <div className="flex items-center justify-between mb-6">
         <h2 className="text-2xl font-bold text-gray-800">Testimonials Management</h2>
         {/* Only Admin/Editor can create testimonials (if allowed by backend) */}
-        {/* {(user?.role === 'ADMIN' || user?.role === 'EDITOR') && (
+        {(user?.role === 'ADMIN' || user?.role === 'EDITOR') && (
           <button
             onClick={() => setShowModal(true)}
             className="inline-flex items-center rounded-md border border-transparent bg-indigo-600 px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2"
           >
             <PlusCircle size={20} className="mr-2" /> New Testimonial
           </button>
-        )} */}
+        )}
       </div>
 
       {error && <p className="mb-4 text-red-600">{error}</p>}
