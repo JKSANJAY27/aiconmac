@@ -71,6 +71,7 @@ export default function ProjectsPage() {
     reset,
     watch,
     control,
+    setValue,
     formState: { errors, isSubmitting }
   } = useForm<ProjectFormInputs>({
     resolver: zodResolver(projectSchema),
@@ -84,6 +85,18 @@ export default function ProjectsPage() {
     control,
     name: "existingImages",
   });
+
+  const watchTitle = watch("title");
+
+  useEffect(() => {
+    if (watchTitle) {
+      const slug = watchTitle
+        .toLowerCase()
+        .replace(/[^a-z0-9]+/g, '-')
+        .replace(/(^-|-$)+/g, '');
+      setValue('slug', slug, { shouldValidate: true });
+    }
+  }, [watchTitle, setValue]);
 
   const watchNewImages = watch("newImages");
 
@@ -259,8 +272,8 @@ export default function ProjectsPage() {
                 )}
                 <div className="absolute top-2 right-2">
                   <span className={`inline-flex items-center rounded-full px-2 py-1 text-xs font-medium ring-1 ring-inset ${project.isPublished
-                      ? 'bg-green-50 text-green-700 ring-green-600/20'
-                      : 'bg-yellow-50 text-yellow-800 ring-yellow-600/20'
+                    ? 'bg-green-50 text-green-700 ring-green-600/20'
+                    : 'bg-yellow-50 text-yellow-800 ring-yellow-600/20'
                     }`}>
                     {project.isPublished ? 'Published' : 'Draft'}
                   </span>
@@ -322,16 +335,16 @@ export default function ProjectsPage() {
 
       {/* Modal */}
       {showModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center overflow-y-auto bg-black/50 backdrop-blur-sm p-4">
-          <div className="w-full max-w-3xl rounded-xl bg-background shadow-2xl ring-1 ring-border animate-in fade-in zoom-in-95 duration-200">
-            <div className="flex items-center justify-between border-b border-border p-6">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
+          <div className="w-full max-w-3xl max-h-[90vh] flex flex-col rounded-xl bg-background shadow-2xl ring-1 ring-border animate-in fade-in zoom-in-95 duration-200">
+            <div className="flex items-center justify-between border-b border-border p-6 shrink-0">
               <h3 className="text-xl font-semibold text-foreground">{editingProject ? 'Edit Project' : 'New Project'}</h3>
               <button onClick={closeModal} className="rounded-md p-1 text-muted-foreground hover:bg-accent hover:text-foreground transition-colors">
                 <X size={20} />
               </button>
             </div>
 
-            <form onSubmit={handleSubmit(onSubmit)} className="p-6 space-y-6">
+            <form onSubmit={handleSubmit(onSubmit)} className="p-6 space-y-6 overflow-y-auto">
               <div className="space-y-4">
                 <div>
                   <label className="text-sm font-medium text-foreground">Title</label>
@@ -376,6 +389,16 @@ export default function ProjectsPage() {
                       ))}
                     </select>
                     {errors.category && <p className="mt-1 text-xs text-destructive">{errors.category.message}</p>}
+
+                    <div className="flex items-center space-x-2 mt-4">
+                      <input
+                        type="checkbox"
+                        id="isPublished"
+                        {...register('isPublished')}
+                        className="h-4 w-4 rounded border-input text-primary focus:ring-ring"
+                      />
+                      <label htmlFor="isPublished" className="text-sm font-medium text-foreground">Publish Project</label>
+                    </div>
                   </div>
                 </div>
 
@@ -383,20 +406,11 @@ export default function ProjectsPage() {
                   <label className="text-sm font-medium text-foreground">Slug</label>
                   <input
                     {...register('slug')}
-                    className="mt-1 block w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-                    placeholder="project-slug-url"
+                    readOnly
+                    className="mt-1 block w-full rounded-md border border-input bg-muted px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring cursor-not-allowed"
+                    placeholder="Auto-generated from title"
                   />
                   {errors.slug && <p className="mt-1 text-xs text-destructive">{errors.slug.message}</p>}
-                </div>
-
-                <div className="flex items-center space-x-2">
-                  <input
-                    type="checkbox"
-                    id="isPublished"
-                    {...register('isPublished')}
-                    className="h-4 w-4 rounded border-input text-primary focus:ring-ring"
-                  />
-                  <label htmlFor="isPublished" className="text-sm font-medium text-foreground">Publish Project</label>
                 </div>
 
                 {/* Image Upload Section */}
