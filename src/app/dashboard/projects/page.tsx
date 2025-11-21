@@ -5,8 +5,8 @@ import AdminLayout from '@/components/layout/AdminLayout';
 import { useAuth } from '@/context/AuthContext';
 import React, { useState, useEffect } from 'react';
 import api from '@/lib/api';
-import { PlusCircle, Edit, Trash2, X, UploadCloud, Eye, Image as ImageIcon } from 'lucide-react';
-import Image from 'next/image'; // Import Next.js Image component
+import { Plus, Edit2, Trash2, X, Upload, Eye, Image as ImageIcon, MoreVertical } from 'lucide-react';
+import Image from 'next/image';
 import { useForm, useFieldArray } from 'react-hook-form';
 import { z } from 'zod';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -20,7 +20,7 @@ const projectSchema = z.object({
   slug: z.string()
     .min(3, "Slug is required")
     .regex(/^[a-z0-9-]+$/, "Slug must be lowercase alphanumeric with hyphens"),
-  isPublished: z.boolean().default(false).optional(), // ✅ allow optional
+  isPublished: z.boolean().default(false).optional(),
   existingImages: z.array(z.object({
     id: z.string(),
     url: z.string().url(),
@@ -30,10 +30,8 @@ const projectSchema = z.object({
   newImages: z.any().optional(),
 });
 
-
 type ProjectFormInputs = z.infer<typeof projectSchema>;
 
-// Extend type for fetch results for clarity
 interface ProjectImage {
   id: string;
   url: string;
@@ -53,7 +51,6 @@ interface Project {
   createdAt: string;
 }
 
-// Categories for dropdown (should match backend enum/categories)
 const categories = [
   'architectural', 'industrial', 'masterplan', '3d-printing', 'business-gifts'
 ];
@@ -83,7 +80,6 @@ export default function ProjectsPage() {
     },
   });
 
-  // react-hook-form field array for managing existing images
   const { fields: existingImageFields, append, remove } = useFieldArray({
     control,
     name: "existingImages",
@@ -91,22 +87,20 @@ export default function ProjectsPage() {
 
   const watchNewImages = watch("newImages");
 
-  // Generate image previews for newly selected files
   useEffect(() => {
     if (watchNewImages instanceof FileList && watchNewImages.length > 0) {
       const urls = Array.from(watchNewImages).map(file => URL.createObjectURL(file));
       setImagePreviews(urls);
-      return () => urls.forEach(url => URL.revokeObjectURL(url)); // Clean up URLs
+      return () => urls.forEach(url => URL.revokeObjectURL(url));
     } else {
       setImagePreviews([]);
     }
   }, [watchNewImages]);
 
-
   const fetchProjects = async () => {
     setLoading(true);
     try {
-      const response = await api.get('/projects'); // Fetch all projects, including unpublished
+      const response = await api.get('/projects');
       setProjects(response.data);
     } catch (err: any) {
       setError(err.response?.data?.message || 'Failed to fetch projects');
@@ -116,31 +110,30 @@ export default function ProjectsPage() {
   };
 
   useEffect(() => {
-    // Only fetch if user is authorized
     if (user && (user.role === 'ADMIN' || user.role === 'EDITOR')) {
       fetchProjects();
     } else if (!user) {
-      // If no user, it means still loading or unauthenticated, handled by AuthContext
+      // Loading handled by AuthContext
     } else {
       setError('You are not authorized to view this page.');
       setLoading(false);
     }
-  }, [user]); // Depend on user to re-fetch/authorize when user state changes
+  }, [user]);
 
   const openCreateModal = () => {
     setEditingProject(null);
-    reset({ // Reset form to default empty values
+    reset({
       title: '', description: '', badge: '', category: '', slug: '', isPublished: false,
       existingImages: [],
-      newImages: undefined, // Explicitly clear file input state
+      newImages: undefined,
     });
-    setImagePreviews([]); // Clear any old previews
+    setImagePreviews([]);
     setShowModal(true);
   };
 
   const openEditModal = (project: Project) => {
     setEditingProject(project);
-    reset({ // Populate form with existing project data
+    reset({
       title: project.title,
       description: project.description,
       badge: project.badge,
@@ -148,9 +141,9 @@ export default function ProjectsPage() {
       slug: project.slug,
       isPublished: project.isPublished,
       existingImages: project.images.map(img => ({ id: img.id, url: img.url, altText: img.altText, order: img.order })),
-      newImages: undefined, // No new images selected initially for edit
+      newImages: undefined,
     });
-    setImagePreviews([]); // Clear any new image previews
+    setImagePreviews([]);
     setShowModal(true);
   };
 
@@ -158,7 +151,7 @@ export default function ProjectsPage() {
     setShowModal(false);
     setEditingProject(null);
     setDeletingProjectId(null);
-    reset(); // Clear form state on close
+    reset();
     setImagePreviews([]);
     setError(null);
   };
@@ -172,33 +165,28 @@ export default function ProjectsPage() {
       formData.append('badge', data.badge);
       formData.append('category', data.category);
       formData.append('slug', data.slug);
-      formData.append('isPublished', String(data.isPublished)); // Convert boolean to string for FormData
+      formData.append('isPublished', String(data.isPublished));
 
-      // Append IDs of existing images to keep
       data.existingImages?.forEach(img => formData.append('existingImageIds[]', img.id));
 
-      // Append new image files
       if (data.newImages && data.newImages instanceof FileList && data.newImages.length > 0) {
         Array.from(data.newImages).forEach(file => formData.append('images', file));
       } else if (!editingProject && (!data.newImages || data.newImages.length === 0)) {
-        // If creating a new project, at least one image (new or existing) is required.
-        // This validation is a basic check. Backend also validates.
         throw new Error('At least one image is required for a new project.');
       }
 
       if (editingProject) {
         await api.put(`/projects/${editingProject.id}`, formData, {
-          headers: { 'Content-Type': 'multipart/form-data' }, // Important for file uploads
+          headers: { 'Content-Type': 'multipart/form-data' },
         });
       } else {
         await api.post('/projects', formData, {
-          headers: { 'Content-Type': 'multipart/form-data' }, // Important for file uploads
+          headers: { 'Content-Type': 'multipart/form-data' },
         });
       }
-      fetchProjects(); // Re-fetch list to update UI
+      fetchProjects();
       closeModal();
     } catch (err: any) {
-      // Display error message from backend or custom error
       setError(err.response?.data?.message || err.message || 'An error occurred during submission.');
     }
   };
@@ -219,229 +207,269 @@ export default function ProjectsPage() {
   };
 
   if (loading) {
-    return <AdminLayout><p>Loading projects...</p></AdminLayout>;
+    return (
+      <AdminLayout>
+        <div className="flex items-center justify-center h-64">
+          <div className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent"></div>
+        </div>
+      </AdminLayout>
+    );
   }
 
-  // Display authorization error if user is not allowed
   if (error && (!user || (user.role !== 'ADMIN' && user.role !== 'EDITOR'))) {
-    return <AdminLayout><p className="text-red-600">{error}</p></AdminLayout>;
+    return <AdminLayout><p className="text-destructive">{error}</p></AdminLayout>;
   }
-
 
   return (
     <AdminLayout>
-      <div className="flex items-center justify-between mb-6">
-        <h2 className="text-2xl font-bold text-gray-800">Projects Management</h2>
-        {/* Only Admin/Editor can create projects */}
-        {(user?.role === 'ADMIN' || user?.role === 'EDITOR') && (
-          <button
-            onClick={openCreateModal}
-            className="inline-flex items-center rounded-md border border-transparent bg-indigo-600 px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2"
-          >
-            <PlusCircle size={20} className="mr-2" /> New Project
-          </button>
-        )}
-      </div>
+      <div className="space-y-6">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+          <div>
+            <h2 className="text-2xl font-bold tracking-tight text-foreground">Projects</h2>
+            <p className="text-muted-foreground">Manage your architectural and industrial models.</p>
+          </div>
+          {(user?.role === 'ADMIN' || user?.role === 'EDITOR') && (
+            <button
+              onClick={openCreateModal}
+              className="inline-flex items-center justify-center rounded-lg bg-primary px-4 py-2.5 text-sm font-medium text-primary-foreground shadow transition-colors hover:bg-primary/90 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+            >
+              <Plus size={18} className="mr-2" /> Add Project
+            </button>
+          )}
+        </div>
 
-      {error && <p className="mb-4 text-red-600">{error}</p>}
+        {error && <div className="rounded-md bg-destructive/15 p-3 text-sm text-destructive">{error}</div>}
 
-      <div className="overflow-x-auto rounded-lg shadow-md">
-        <table className="min-w-full divide-y divide-gray-200">
-          <thead className="bg-gray-50">
-            <tr>
-              <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">Title</th>
-              <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">Category</th>
-              <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">Published</th>
-              <th className="px-6 py-3 text-right text-xs font-medium uppercase tracking-wider text-gray-500">Actions</th>
-            </tr>
-          </thead>
-          <tbody className="divide-y divide-gray-200 bg-white">
-            {projects.map((project) => (
-              <tr key={project.id}>
-                <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{project.title}</td>
-                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 capitalize">{project.category}</td>
-                <td className="px-6 py-4 whitespace-nowrap text-sm">
-                  <span className={`inline-flex rounded-full px-2 text-xs font-semibold leading-5 ${
-                    project.isPublished ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
-                  }`}>
-                    {project.isPublished ? 'Yes' : 'No'}
+        <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+          {projects.map((project) => (
+            <div key={project.id} className="group relative overflow-hidden rounded-xl border border-border bg-card shadow-sm transition-all hover:shadow-md">
+              <div className="aspect-video w-full overflow-hidden bg-muted">
+                {project.images && project.images.length > 0 ? (
+                  <Image
+                    src={project.images[0].url}
+                    alt={project.title}
+                    width={400}
+                    height={300}
+                    className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
+                  />
+                ) : (
+                  <div className="flex h-full w-full items-center justify-center text-muted-foreground">
+                    <ImageIcon size={32} />
+                  </div>
+                )}
+                <div className="absolute top-2 right-2">
+                  <span className={`inline-flex items-center rounded-full px-2 py-1 text-xs font-medium ring-1 ring-inset ${project.isPublished
+                      ? 'bg-green-50 text-green-700 ring-green-600/20'
+                      : 'bg-yellow-50 text-yellow-800 ring-yellow-600/20'
+                    }`}>
+                    {project.isPublished ? 'Published' : 'Draft'}
                   </span>
-                </td>
-                <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                  {/* Only Admin/Editor can edit/delete projects */}
+                </div>
+              </div>
+
+              <div className="p-4">
+                <div className="mb-2 flex items-center justify-between">
+                  <span className="inline-flex items-center rounded-md bg-secondary px-2 py-1 text-xs font-medium text-secondary-foreground capitalize">
+                    {project.category}
+                  </span>
+                </div>
+                <h3 className="line-clamp-1 text-lg font-semibold text-foreground" title={project.title}>{project.title}</h3>
+                <p className="mt-1 line-clamp-2 text-sm text-muted-foreground">{project.description}</p>
+
+                <div className="mt-4 flex items-center justify-end gap-2 border-t border-border pt-4">
                   {(user?.role === 'ADMIN' || user?.role === 'EDITOR') && (
                     <>
                       <button
                         onClick={() => openEditModal(project)}
-                        className="text-indigo-600 hover:text-indigo-900 mr-4"
-                        title="Edit Project"
+                        className="inline-flex h-8 w-8 items-center justify-center rounded-md text-muted-foreground hover:bg-accent hover:text-foreground transition-colors"
+                        title="Edit"
                       >
-                        <Edit size={18} />
+                        <Edit2 size={16} />
                       </button>
                       <button
                         onClick={() => confirmDelete(project.id)}
-                        className="text-red-600 hover:text-red-900"
-                        title="Delete Project"
+                        className="inline-flex h-8 w-8 items-center justify-center rounded-md text-muted-foreground hover:bg-destructive/10 hover:text-destructive transition-colors"
+                        title="Delete"
                       >
-                        <Trash2 size={18} />
+                        <Trash2 size={16} />
                       </button>
                     </>
                   )}
-                  {user?.role === 'VIEWER' && (
-                    <span className="text-gray-400">No actions</span>
-                  )}
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+
+        {projects.length === 0 && !loading && (
+          <div className="flex flex-col items-center justify-center rounded-lg border border-dashed border-border p-12 text-center">
+            <div className="rounded-full bg-muted p-4">
+              <ImageIcon className="h-8 w-8 text-muted-foreground" />
+            </div>
+            <h3 className="mt-4 text-lg font-semibold text-foreground">No projects found</h3>
+            <p className="mt-2 text-sm text-muted-foreground">Get started by creating a new project.</p>
+            {(user?.role === 'ADMIN' || user?.role === 'EDITOR') && (
+              <button
+                onClick={openCreateModal}
+                className="mt-4 inline-flex items-center justify-center rounded-lg bg-primary px-4 py-2 text-sm font-medium text-primary-foreground shadow hover:bg-primary/90"
+              >
+                <Plus size={16} className="mr-2" /> Create Project
+              </button>
+            )}
+          </div>
+        )}
       </div>
 
-      {/* Project Modal (Create/Edit) */}
-      {showModal && (user?.role === 'ADMIN' || user?.role === 'EDITOR') && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center overflow-y-auto bg-gray-900 bg-opacity-50">
-          <div className="w-full max-w-4xl rounded-lg bg-white p-8 shadow-xl">
-            <div className="flex items-center justify-between mb-6">
-              <h3 className="text-xl font-bold text-gray-800">{editingProject ? 'Edit Project' : 'Create New Project'}</h3>
-              <button onClick={closeModal} className="text-gray-500 hover:text-gray-700">
-                <X size={24} />
+      {/* Modal */}
+      {showModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center overflow-y-auto bg-black/50 backdrop-blur-sm p-4">
+          <div className="w-full max-w-3xl rounded-xl bg-background shadow-2xl ring-1 ring-border animate-in fade-in zoom-in-95 duration-200">
+            <div className="flex items-center justify-between border-b border-border p-6">
+              <h3 className="text-xl font-semibold text-foreground">{editingProject ? 'Edit Project' : 'New Project'}</h3>
+              <button onClick={closeModal} className="rounded-md p-1 text-muted-foreground hover:bg-accent hover:text-foreground transition-colors">
+                <X size={20} />
               </button>
             </div>
 
-            {error && <p className="mb-4 text-red-600">{error}</p>}
-
-            <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
-              <div>
-                <label htmlFor="title" className="block text-sm font-medium text-gray-700">Title</label>
-                <input
-                  type="text" id="title" {...register('title')}
-                  className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
-                />
-                {errors.title && <p className="mt-1 text-sm text-red-600">{errors.title.message}</p>}
-              </div>
-              <div>
-                <label htmlFor="description" className="block text-sm font-medium text-gray-700">Description</label>
-                <textarea
-                  id="description" {...register('description')} rows={4}
-                  className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
-                />
-                {errors.description && <p className="mt-1 text-sm text-red-600">{errors.description.message}</p>}
-              </div>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <form onSubmit={handleSubmit(onSubmit)} className="p-6 space-y-6">
+              <div className="space-y-4">
                 <div>
-                  <label htmlFor="badge" className="block text-sm font-medium text-gray-700">Badge</label>
+                  <label className="text-sm font-medium text-foreground">Title</label>
                   <input
-                    type="text" id="badge" {...register('badge')}
-                    className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
+                    {...register('title')}
+                    className="mt-1 block w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                    placeholder="Project Title"
                   />
-                  {errors.badge && <p className="mt-1 text-sm text-red-600">{errors.badge.message}</p>}
+                  {errors.title && <p className="mt-1 text-xs text-destructive">{errors.title.message}</p>}
                 </div>
-                <div>
-                  <label htmlFor="category" className="block text-sm font-medium text-gray-700">Category</label>
-                  <select
-                    id="category" {...register('category')}
-                    className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
-                  >
-                    <option value="">Select Category</option>
-                    {categories.map(cat => (
-                      <option key={cat} value={cat}>{cat.charAt(0).toUpperCase() + cat.slice(1)}</option>
-                    ))}
-                  </select>
-                  {errors.category && <p className="mt-1 text-sm text-red-600">{errors.category.message}</p>}
-                </div>
-              </div>
-              <div>
-                <label htmlFor="slug" className="block text-sm font-medium text-gray-700">Slug</label>
-                <input
-                  type="text" id="slug" {...register('slug')}
-                  className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
-                />
-                {errors.slug && <p className="mt-1 text-sm text-red-600">{errors.slug.message}</p>}
-              </div>
-              <div className="flex items-center">
-                <input
-                  id="isPublished" type="checkbox" {...register('isPublished')}
-                  className="h-4 w-4 rounded border-gray-300 text-indigo-600 focus:ring-indigo-500"
-                />
-                <label htmlFor="isPublished" className="ml-2 block text-sm text-gray-900">Publish Project</label>
-              </div>
 
-              {/* Existing Images */}
-              {existingImageFields.length > 0 && (
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">Existing Images</label>
-                  <div className="grid grid-cols-3 gap-4">
-                    {existingImageFields.map((field, imgIndex) => (
-                      <div key={field.id} className="relative group rounded-lg overflow-hidden border border-gray-200">
-                        <Image src={field.url} alt={field.altText || `Image ${imgIndex + 1}`} width={150} height={100} objectFit="cover" className="w-full h-24" />
-                        <button
-                          type="button"
-                          onClick={() => remove(imgIndex)} // This removes from form state, backend will handle deletion via existingImageIds
-                          className="absolute top-1 right-1 p-1 bg-red-600 text-white rounded-full opacity-0 group-hover:opacity-100 transition-opacity"
-                          title="Remove existing image"
-                        >
-                          <X size={16} />
-                        </button>
-                      </div>
-                    ))}
+                  <label className="text-sm font-medium text-foreground">Description</label>
+                  <textarea
+                    {...register('description')}
+                    rows={3}
+                    className="mt-1 block w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                    placeholder="Project Description"
+                  />
+                  {errors.description && <p className="mt-1 text-xs text-destructive">{errors.description.message}</p>}
+                </div>
+
+                <div className="grid gap-4 sm:grid-cols-2">
+                  <div>
+                    <label className="text-sm font-medium text-foreground">Badge</label>
+                    <input
+                      {...register('badge')}
+                      className="mt-1 block w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                      placeholder="e.g. New, Featured"
+                    />
+                    {errors.badge && <p className="mt-1 text-xs text-destructive">{errors.badge.message}</p>}
+                  </div>
+                  <div>
+                    <label className="text-sm font-medium text-foreground">Category</label>
+                    <select
+                      {...register('category')}
+                      className="mt-1 block w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                    >
+                      <option value="">Select Category</option>
+                      {categories.map(cat => (
+                        <option key={cat} value={cat}>{cat.charAt(0).toUpperCase() + cat.slice(1)}</option>
+                      ))}
+                    </select>
+                    {errors.category && <p className="mt-1 text-xs text-destructive">{errors.category.message}</p>}
                   </div>
                 </div>
-              )}
 
-              {/* New Images Upload */}
-              <div>
-                <label htmlFor="newImages" className="block text-sm font-medium text-gray-700">
-                  {editingProject ? 'Add New Images' : 'Upload Images'}
-                </label>
-                <div className="mt-1 flex justify-center rounded-md border-2 border-dashed border-gray-300 px-6 pt-5 pb-6">
-                  <div className="space-y-1 text-center">
-                    <UploadCloud className="mx-auto h-12 w-12 text-gray-400" />
-                    <div className="flex text-sm text-gray-600">
-                      <label
-                        htmlFor="newImages"
-                        className="relative cursor-pointer rounded-md bg-white font-medium text-indigo-600 focus-within:outline-none focus-within:ring-2 focus-within:ring-indigo-500 focus-within:ring-offset-2 hover:text-indigo-500"
-                      >
-                        <span>Upload files</span>
-                        <input
-                          id="newImages"
-                          type="file"
-                          multiple
-                          accept="image/jpeg,image/png,image/webp"
-                          {...register('newImages')}
-                          className="sr-only"
-                        />
-                      </label>
-                      <p className="pl-1">or drag and drop</p>
+                <div>
+                  <label className="text-sm font-medium text-foreground">Slug</label>
+                  <input
+                    {...register('slug')}
+                    className="mt-1 block w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                    placeholder="project-slug-url"
+                  />
+                  {errors.slug && <p className="mt-1 text-xs text-destructive">{errors.slug.message}</p>}
+                </div>
+
+                <div className="flex items-center space-x-2">
+                  <input
+                    type="checkbox"
+                    id="isPublished"
+                    {...register('isPublished')}
+                    className="h-4 w-4 rounded border-input text-primary focus:ring-ring"
+                  />
+                  <label htmlFor="isPublished" className="text-sm font-medium text-foreground">Publish Project</label>
+                </div>
+
+                {/* Image Upload Section */}
+                <div className="space-y-3">
+                  <label className="text-sm font-medium text-foreground">Images</label>
+
+                  {existingImageFields.length > 0 && (
+                    <div className="grid grid-cols-4 gap-4 mb-4">
+                      {existingImageFields.map((field, index) => (
+                        <div key={field.id} className="relative group aspect-square rounded-lg overflow-hidden border border-border">
+                          <Image src={field.url} alt="Existing" fill className="object-cover" />
+                          <button
+                            type="button"
+                            onClick={() => remove(index)}
+                            className="absolute top-1 right-1 rounded-full bg-destructive p-1 text-destructive-foreground opacity-0 transition-opacity group-hover:opacity-100"
+                          >
+                            <X size={12} />
+                          </button>
+                        </div>
+                      ))}
                     </div>
-                    <p className="text-xs text-gray-500">PNG, JPG, WEBP up to 10MB (max 10 files)</p>
-                  </div>
-                </div>
-                {errors.newImages && <p className="mt-1 text-sm text-red-600">{String(errors.title?.message)}</p>}
-                {imagePreviews.length > 0 && (
-                  <div className="mt-4 grid grid-cols-3 gap-4">
-                    {imagePreviews.map((src, index) => (
-                      <div key={index} className="relative rounded-lg overflow-hidden">
-                        <Image src={src} alt={`New image preview ${index + 1}`} width={150} height={100} objectFit="cover" className="w-full h-24" />
+                  )}
+
+                  <div className="flex justify-center rounded-lg border border-dashed border-input px-6 py-8 hover:bg-accent/50 transition-colors">
+                    <div className="text-center">
+                      <Upload className="mx-auto h-8 w-8 text-muted-foreground" />
+                      <div className="mt-2 flex text-sm leading-6 text-muted-foreground">
+                        <label
+                          htmlFor="newImages"
+                          className="relative cursor-pointer rounded-md font-semibold text-primary hover:underline focus-within:outline-none focus-within:ring-2 focus-within:ring-ring focus-within:ring-offset-2"
+                        >
+                          <span>Upload files</span>
+                          <input
+                            id="newImages"
+                            type="file"
+                            multiple
+                            accept="image/*"
+                            {...register('newImages')}
+                            className="sr-only"
+                          />
+                        </label>
+                        <p className="pl-1">or drag and drop</p>
                       </div>
-                    ))}
+                      <p className="text-xs text-muted-foreground">PNG, JPG up to 10MB</p>
+                    </div>
                   </div>
-                )}
+
+                  {imagePreviews.length > 0 && (
+                    <div className="grid grid-cols-4 gap-4 mt-4">
+                      {imagePreviews.map((src, index) => (
+                        <div key={index} className="relative aspect-square rounded-lg overflow-hidden border border-border">
+                          <Image src={src} alt="Preview" fill className="object-cover" />
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
               </div>
 
-              <div className="flex justify-end space-x-3">
+              <div className="flex justify-end gap-3 border-t border-border pt-4">
                 <button
                   type="button"
                   onClick={closeModal}
-                  className="rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2"
+                  className="rounded-md border border-input bg-background px-4 py-2 text-sm font-medium text-foreground shadow-sm hover:bg-accent hover:text-accent-foreground transition-colors"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
                   disabled={isSubmitting}
-                  className="inline-flex justify-center rounded-md border border-transparent bg-indigo-600 px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 disabled:opacity-50"
+                  className="rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground shadow hover:bg-primary/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:opacity-50"
                 >
-                  {isSubmitting ? 'Saving...' : editingProject ? 'Save Changes' : 'Create Project'}
+                  {isSubmitting ? 'Saving...' : 'Save Project'}
                 </button>
               </div>
             </form>
@@ -449,25 +477,24 @@ export default function ProjectsPage() {
         </div>
       )}
 
-      {/* Delete Confirmation Modal */}
-      {deletingProjectId && (user?.role === 'ADMIN' || user?.role === 'EDITOR') && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center overflow-y-auto bg-gray-900 bg-opacity-50">
-          <div className="w-full max-w-sm rounded-lg bg-white p-8 shadow-xl">
-            <h3 className="text-xl font-bold text-gray-800 mb-4">Confirm Deletion</h3>
-            <p className="text-gray-700 mb-6">Are you sure you want to delete this project? This action cannot be undone.</p>
-            <div className="flex justify-end space-x-3">
+      {/* Delete Modal */}
+      {deletingProjectId && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
+          <div className="w-full max-w-md rounded-xl bg-background p-6 shadow-2xl ring-1 ring-border animate-in fade-in zoom-in-95 duration-200">
+            <h3 className="text-lg font-semibold text-foreground mb-2">Delete Project</h3>
+            <p className="text-sm text-muted-foreground mb-6">
+              Are you sure you want to delete this project? This action cannot be undone.
+            </p>
+            <div className="flex justify-end gap-3">
               <button
-                type="button"
                 onClick={closeModal}
-                className="rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2"
+                className="rounded-md border border-input bg-background px-4 py-2 text-sm font-medium text-foreground shadow-sm hover:bg-accent hover:text-accent-foreground transition-colors"
               >
                 Cancel
               </button>
               <button
-                type="button"
                 onClick={() => deleteProject(deletingProjectId)}
-                disabled={isSubmitting}
-                className="inline-flex justify-center rounded-md border border-transparent bg-red-600 px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2 disabled:opacity-50"
+                className="rounded-md bg-destructive px-4 py-2 text-sm font-medium text-destructive-foreground shadow hover:bg-destructive/90 transition-colors"
               >
                 Delete
               </button>
