@@ -14,7 +14,8 @@ import {
   LogOut,
   ChevronLeft,
   Menu,
-  LayoutDashboard
+  LayoutDashboard,
+  Building2
 } from 'lucide-react';
 
 interface NavItemProps {
@@ -69,6 +70,7 @@ export default function AdminLayout({ children }: { children: ReactNode }) {
   const navItems = [
     { href: '/dashboard', icon: <LayoutDashboard size={20} />, label: 'Overview', roles: ['ADMIN', 'EDITOR', 'VIEWER'] },
     { href: '/dashboard/projects', icon: <FolderDot size={20} />, label: 'Projects', roles: ['ADMIN', 'EDITOR'] },
+    { href: '/dashboard/clients', icon: <Building2 size={20} />, label: 'Clients', roles: ['ADMIN', 'EDITOR'] },
     { href: '/dashboard/testimonials', icon: <MessageSquare size={20} />, label: 'Testimonials', roles: ['ADMIN', 'EDITOR', 'VIEWER'] },
     { href: '/dashboard/contacts', icon: <Briefcase size={20} />, label: 'Contact Forms', roles: ['ADMIN', 'EDITOR', 'VIEWER'] },
     { href: '/dashboard/careers', icon: <Users size={20} />, label: 'Career Submissions', roles: ['ADMIN', 'EDITOR'] },
