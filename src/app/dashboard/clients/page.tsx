@@ -13,6 +13,8 @@ import { zodResolver } from '@hookform/resolvers/zod';
 // Zod schema for client validation
 const clientSchema = z.object({
     name: z.string().min(2, "Company Name is required"),
+    name_ar: z.string().optional(),
+    name_ru: z.string().optional(),
     logo: z.any()
         .refine((files) => files && files.length > 0, "Logo is required")
         .refine((files) => {
@@ -29,6 +31,8 @@ type ClientFormInputs = z.infer<typeof clientSchema>;
 interface Client {
     id: string;
     name: string;
+    name_ar?: string;
+    name_ru?: string;
     logo: string;
     createdAt: string;
 }
@@ -89,7 +93,7 @@ export default function ClientsPage() {
     }, [user]);
 
     const openCreateModal = () => {
-        reset({ name: '', logo: undefined });
+        reset({ name: '', name_ar: '', name_ru: '', logo: undefined });
         setLogoPreview(null);
         setShowModal(true);
     };
@@ -107,6 +111,8 @@ export default function ClientsPage() {
         try {
             const formData = new FormData();
             formData.append('name', data.name);
+            if (data.name_ar) formData.append('name_ar', data.name_ar);
+            if (data.name_ru) formData.append('name_ru', data.name_ru);
 
             if (data.logo && data.logo instanceof FileList && data.logo.length > 0) {
                 formData.append('logo', data.logo[0]);
@@ -252,6 +258,25 @@ export default function ClientsPage() {
                                         placeholder="Company Name"
                                     />
                                     {errors.name && <p className="mt-1 text-xs text-destructive">{errors.name.message as string}</p>}
+                                </div>
+                                <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                                    <div>
+                                        <label className="text-sm font-medium text-foreground">Company Name (Arabic)</label>
+                                        <input
+                                            {...register('name_ar')}
+                                            className="mt-1 block w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring text-right"
+                                            placeholder="Company Name (AR)"
+                                            dir="rtl"
+                                        />
+                                    </div>
+                                    <div>
+                                        <label className="text-sm font-medium text-foreground">Company Name (Russian)</label>
+                                        <input
+                                            {...register('name_ru')}
+                                            className="mt-1 block w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                                            placeholder="Company Name (RU)"
+                                        />
+                                    </div>
                                 </div>
 
                                 {/* Image Upload Section */}

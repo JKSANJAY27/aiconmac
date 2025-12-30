@@ -14,9 +14,17 @@ import { zodResolver } from '@hookform/resolvers/zod';
 // Zod schema for project validation
 const projectSchema = z.object({
   title: z.string().min(3, "Title is required"),
+  title_ar: z.string().optional(),
+  title_ru: z.string().optional(),
   description: z.string().min(10, "Description is required"),
+  description_ar: z.string().optional(),
+  description_ru: z.string().optional(),
   badge: z.string().min(1, "Badge is required"),
+  badge_ar: z.string().optional(),
+  badge_ru: z.string().optional(),
   category: z.string().min(1, "Category is required"),
+  category_ar: z.string().optional(),
+  category_ru: z.string().optional(),
   slug: z.string()
     .min(3, "Slug is required")
     .regex(/^[a-z0-9-]+$/, "Slug must be lowercase alphanumeric with hyphens"),
@@ -42,9 +50,17 @@ interface ProjectImage {
 interface Project {
   id: string;
   title: string;
+  title_ar?: string;
+  title_ru?: string;
   description: string;
+  description_ar?: string;
+  description_ru?: string;
   badge: string;
+  badge_ar?: string;
+  badge_ru?: string;
   category: string;
+  category_ar?: string;
+  category_ru?: string;
   slug: string;
   isPublished: boolean;
   images: ProjectImage[];
@@ -136,7 +152,11 @@ export default function ProjectsPage() {
   const openCreateModal = () => {
     setEditingProject(null);
     reset({
-      title: '', description: '', badge: '', category: '', slug: '', isPublished: false,
+      title: '', title_ar: '', title_ru: '',
+      description: '', description_ar: '', description_ru: '',
+      badge: '', badge_ar: '', badge_ru: '',
+      category: '', category_ar: '', category_ru: '',
+      slug: '', isPublished: false,
       existingImages: [],
       newImages: undefined,
     });
@@ -148,9 +168,17 @@ export default function ProjectsPage() {
     setEditingProject(project);
     reset({
       title: project.title,
+      title_ar: project.title_ar,
+      title_ru: project.title_ru,
       description: project.description,
+      description_ar: project.description_ar,
+      description_ru: project.description_ru,
       badge: project.badge,
+      badge_ar: project.badge_ar,
+      badge_ru: project.badge_ru,
       category: project.category,
+      category_ar: project.category_ar,
+      category_ru: project.category_ru,
       slug: project.slug,
       isPublished: project.isPublished,
       existingImages: project.images.map(img => ({ id: img.id, url: img.url, altText: img.altText, order: img.order })),
@@ -174,9 +202,21 @@ export default function ProjectsPage() {
     try {
       const formData = new FormData();
       formData.append('title', data.title);
+      if (data.title_ar) formData.append('title_ar', data.title_ar);
+      if (data.title_ru) formData.append('title_ru', data.title_ru);
+
       formData.append('description', data.description);
+      if (data.description_ar) formData.append('description_ar', data.description_ar);
+      if (data.description_ru) formData.append('description_ru', data.description_ru);
+
       formData.append('badge', data.badge);
+      if (data.badge_ar) formData.append('badge_ar', data.badge_ar);
+      if (data.badge_ru) formData.append('badge_ru', data.badge_ru);
+
       formData.append('category', data.category);
+      if (data.category_ar) formData.append('category_ar', data.category_ar);
+      if (data.category_ru) formData.append('category_ru', data.category_ru);
+
       formData.append('slug', data.slug);
       formData.append('isPublished', String(data.isPublished));
 
@@ -390,6 +430,100 @@ export default function ProjectsPage() {
                     </select>
                     {errors.category && <p className="mt-1 text-xs text-destructive">{errors.category.message}</p>}
 
+                  </div>
+                </div>
+
+                {/* Multilingual Support Section */}
+                <div className="rounded-lg border border-border p-4 bg-muted/30 space-y-4">
+                  <h4 className="font-semibold text-sm">Translations (Optional)</h4>
+
+                  {/* Arabic Fields */}
+                  <div className="space-y-4 border-l-2 border-orange-200 pl-4">
+                    <h5 className="text-xs font-semibold text-muted-foreground uppercase">Arabic</h5>
+                    <div className="grid gap-4 sm:grid-cols-2">
+                      <div>
+                        <label className="text-sm font-medium text-foreground">Title (Arabic)</label>
+                        <input
+                          {...register('title_ar')}
+                          className="mt-1 block w-full rounded-md border border-input bg-background px-3 py-2 text-sm text-right"
+                          placeholder="Project Title (AR)"
+                          dir="rtl"
+                        />
+                      </div>
+                      <div>
+                        <label className="text-sm font-medium text-foreground">Badge (Arabic)</label>
+                        <input
+                          {...register('badge_ar')}
+                          className="mt-1 block w-full rounded-md border border-input bg-background px-3 py-2 text-sm text-right"
+                          placeholder="Badge (AR)"
+                          dir="rtl"
+                        />
+                      </div>
+                    </div>
+                    <div>
+                      <label className="text-sm font-medium text-foreground">Description (Arabic)</label>
+                      <textarea
+                        {...register('description_ar')}
+                        rows={2}
+                        className="mt-1 block w-full rounded-md border border-input bg-background px-3 py-2 text-sm text-right"
+                        placeholder="Description (AR)"
+                        dir="rtl"
+                      />
+                    </div>
+                    <div>
+                      <label className="text-sm font-medium text-foreground">Category (Arabic)</label>
+                      <input
+                        {...register('category_ar')}
+                        className="mt-1 block w-full rounded-md border border-input bg-background px-3 py-2 text-sm text-right"
+                        placeholder="Category (AR)"
+                        dir="rtl"
+                      />
+                    </div>
+                  </div>
+
+                  {/* Russian Fields */}
+                  <div className="space-y-4 border-l-2 border-blue-200 pl-4">
+                    <h5 className="text-xs font-semibold text-muted-foreground uppercase">Russian</h5>
+                    <div className="grid gap-4 sm:grid-cols-2">
+                      <div>
+                        <label className="text-sm font-medium text-foreground">Title (Russian)</label>
+                        <input
+                          {...register('title_ru')}
+                          className="mt-1 block w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+                          placeholder="Project Title (RU)"
+                        />
+                      </div>
+                      <div>
+                        <label className="text-sm font-medium text-foreground">Badge (Russian)</label>
+                        <input
+                          {...register('badge_ru')}
+                          className="mt-1 block w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+                          placeholder="Badge (RU)"
+                        />
+                      </div>
+                    </div>
+                    <div>
+                      <label className="text-sm font-medium text-foreground">Description (Russian)</label>
+                      <textarea
+                        {...register('description_ru')}
+                        rows={2}
+                        className="mt-1 block w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+                        placeholder="Description (RU)"
+                      />
+                    </div>
+                    <div>
+                      <label className="text-sm font-medium text-foreground">Category (Russian)</label>
+                      <input
+                        {...register('category_ru')}
+                        className="mt-1 block w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+                        placeholder="Category (RU)"
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                <div className="grid gap-4 sm:grid-cols-2">
+                  <div>
                     <div className="flex items-center space-x-2 mt-4">
                       <input
                         type="checkbox"

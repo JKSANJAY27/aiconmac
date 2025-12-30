@@ -13,9 +13,17 @@ import { zodResolver } from '@hookform/resolvers/zod';
 // Zod schema for testimonial validation
 const testimonialSchema = z.object({
   quote: z.string().min(10, "Quote is required"),
+  quote_ar: z.string().optional(),
+  quote_ru: z.string().optional(),
   author: z.string().min(3, "Author name is required"),
+  author_ar: z.string().optional(),
+  author_ru: z.string().optional(),
   title: z.string().optional(),
+  title_ar: z.string().optional(),
+  title_ru: z.string().optional(),
   company: z.string().optional(),
+  company_ar: z.string().optional(),
+  company_ru: z.string().optional(),
   isApproved: z.boolean(),
 });
 
@@ -24,9 +32,17 @@ type TestimonialFormInputs = z.infer<typeof testimonialSchema>;
 interface Testimonial {
   id: string;
   quote: string;
+  quote_ar?: string;
+  quote_ru?: string;
   author: string;
+  author_ar?: string;
+  author_ru?: string;
   title?: string;
+  title_ar?: string;
+  title_ru?: string;
   company?: string;
+  company_ar?: string;
+  company_ru?: string;
   isApproved: boolean;
   createdAt: string;
 }
@@ -72,9 +88,17 @@ export default function TestimonialsPage() {
     setEditingTestimonial(testimonial);
     reset({
       quote: testimonial.quote,
+      quote_ar: testimonial.quote_ar,
+      quote_ru: testimonial.quote_ru,
       author: testimonial.author,
+      author_ar: testimonial.author_ar,
+      author_ru: testimonial.author_ru,
       title: testimonial.title,
+      title_ar: testimonial.title_ar,
+      title_ru: testimonial.title_ru,
       company: testimonial.company,
+      company_ar: testimonial.company_ar,
+      company_ru: testimonial.company_ru,
       isApproved: testimonial.isApproved,
     });
     setShowModal(true);
@@ -198,8 +222,8 @@ export default function TestimonialsPage() {
                     <button
                       onClick={() => toggleApproval(testimonial)}
                       className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium transition-colors ${testimonial.isApproved
-                          ? 'bg-green-50 text-green-700 hover:bg-green-100'
-                          : 'bg-yellow-50 text-yellow-800 hover:bg-yellow-100'
+                        ? 'bg-green-50 text-green-700 hover:bg-green-100'
+                        : 'bg-yellow-50 text-yellow-800 hover:bg-yellow-100'
                         }`}
                     >
                       {testimonial.isApproved ? (
@@ -210,8 +234,8 @@ export default function TestimonialsPage() {
                     </button>
                   ) : (
                     <span className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium ${testimonial.isApproved
-                        ? 'bg-green-50 text-green-700'
-                        : 'bg-yellow-50 text-yellow-800'
+                      ? 'bg-green-50 text-green-700'
+                      : 'bg-yellow-50 text-yellow-800'
                       }`}>
                       {testimonial.isApproved ? 'Approved' : 'Pending'}
                     </span>
@@ -314,6 +338,95 @@ export default function TestimonialsPage() {
                 </div>
               </div>
 
+              {/* Multilingual Support Section */}
+              <div className="rounded-lg border border-border p-4 bg-muted/30 space-y-4">
+                <h4 className="font-semibold text-sm">Translations (Optional)</h4>
+
+                {/* Arabic Fields */}
+                <div className="space-y-4 border-l-2 border-orange-200 pl-4">
+                  <h5 className="text-xs font-semibold text-muted-foreground uppercase">Arabic</h5>
+                  <div>
+                    <label className="text-sm font-medium text-foreground">Quote (Arabic)</label>
+                    <textarea
+                      {...register('quote_ar')}
+                      rows={3}
+                      className="mt-1 block w-full rounded-md border border-input bg-background px-3 py-2 text-sm text-right"
+                      placeholder="Quote (AR)"
+                      dir="rtl"
+                    />
+                  </div>
+                  <div className="grid gap-4 sm:grid-cols-3">
+                    <div>
+                      <label className="text-sm font-medium text-foreground">Author (Arabic)</label>
+                      <input
+                        {...register('author_ar')}
+                        className="mt-1 block w-full rounded-md border border-input bg-background px-3 py-2 text-sm text-right"
+                        placeholder="Author (AR)"
+                        dir="rtl"
+                      />
+                    </div>
+                    <div>
+                      <label className="text-sm font-medium text-foreground">Title (Arabic)</label>
+                      <input
+                        {...register('title_ar')}
+                        className="mt-1 block w-full rounded-md border border-input bg-background px-3 py-2 text-sm text-right"
+                        placeholder="Title (AR)"
+                        dir="rtl"
+                      />
+                    </div>
+                    <div>
+                      <label className="text-sm font-medium text-foreground">Company (Arabic)</label>
+                      <input
+                        {...register('company_ar')}
+                        className="mt-1 block w-full rounded-md border border-input bg-background px-3 py-2 text-sm text-right"
+                        placeholder="Company (AR)"
+                        dir="rtl"
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                {/* Russian Fields */}
+                <div className="space-y-4 border-l-2 border-blue-200 pl-4">
+                  <h5 className="text-xs font-semibold text-muted-foreground uppercase">Russian</h5>
+                  <div>
+                    <label className="text-sm font-medium text-foreground">Quote (Russian)</label>
+                    <textarea
+                      {...register('quote_ru')}
+                      rows={3}
+                      className="mt-1 block w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+                      placeholder="Quote (RU)"
+                    />
+                  </div>
+                  <div className="grid gap-4 sm:grid-cols-3">
+                    <div>
+                      <label className="text-sm font-medium text-foreground">Author (Russian)</label>
+                      <input
+                        {...register('author_ru')}
+                        className="mt-1 block w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+                        placeholder="Author (RU)"
+                      />
+                    </div>
+                    <div>
+                      <label className="text-sm font-medium text-foreground">Title (Russian)</label>
+                      <input
+                        {...register('title_ru')}
+                        className="mt-1 block w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+                        placeholder="Title (RU)"
+                      />
+                    </div>
+                    <div>
+                      <label className="text-sm font-medium text-foreground">Company (Russian)</label>
+                      <input
+                        {...register('company_ru')}
+                        className="mt-1 block w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+                        placeholder="Company (RU)"
+                      />
+                    </div>
+                  </div>
+                </div>
+              </div>
+
               <div className="flex items-center space-x-2">
                 <input
                   type="checkbox"
@@ -346,30 +459,32 @@ export default function TestimonialsPage() {
       )}
 
       {/* Delete Modal */}
-      {deletingTestimonialId && (user?.role === 'ADMIN' || user?.role === 'EDITOR') && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
-          <div className="w-full max-w-md rounded-xl bg-background p-6 shadow-2xl ring-1 ring-border animate-in fade-in zoom-in-95 duration-200">
-            <h3 className="text-lg font-semibold text-foreground mb-2">Delete Testimonial</h3>
-            <p className="text-sm text-muted-foreground mb-6">
-              Are you sure you want to delete this testimonial? This action cannot be undone.
-            </p>
-            <div className="flex justify-end gap-3">
-              <button
-                onClick={closeModal}
-                className="rounded-md border border-input bg-background px-4 py-2 text-sm font-medium text-foreground shadow-sm hover:bg-accent hover:text-accent-foreground transition-colors"
-              >
-                Cancel
-              </button>
-              <button
-                onClick={() => deleteTestimonial(deletingTestimonialId)}
-                className="rounded-md bg-destructive px-4 py-2 text-sm font-medium text-destructive-foreground shadow hover:bg-destructive/90 transition-colors"
-              >
-                Delete
-              </button>
+      {
+        deletingTestimonialId && (user?.role === 'ADMIN' || user?.role === 'EDITOR') && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
+            <div className="w-full max-w-md rounded-xl bg-background p-6 shadow-2xl ring-1 ring-border animate-in fade-in zoom-in-95 duration-200">
+              <h3 className="text-lg font-semibold text-foreground mb-2">Delete Testimonial</h3>
+              <p className="text-sm text-muted-foreground mb-6">
+                Are you sure you want to delete this testimonial? This action cannot be undone.
+              </p>
+              <div className="flex justify-end gap-3">
+                <button
+                  onClick={closeModal}
+                  className="rounded-md border border-input bg-background px-4 py-2 text-sm font-medium text-foreground shadow-sm hover:bg-accent hover:text-accent-foreground transition-colors"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={() => deleteTestimonial(deletingTestimonialId)}
+                  className="rounded-md bg-destructive px-4 py-2 text-sm font-medium text-destructive-foreground shadow hover:bg-destructive/90 transition-colors"
+                >
+                  Delete
+                </button>
+              </div>
             </div>
           </div>
-        </div>
-      )}
-    </AdminLayout>
+        )
+      }
+    </AdminLayout >
   );
 }
