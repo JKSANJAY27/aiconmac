@@ -8,7 +8,31 @@ import Link from 'next/link';
 import { FolderDot, MessageSquare, Briefcase, Users, ArrowRight, Plus, Activity } from 'lucide-react';
 import api from '@/lib/api';
 
+
+interface ActivityItem {
+  id: string;
+  type: 'contact' | 'career';
+  name: string;
+  date: string;
+}
+
+function getRelativeTime(dateString: string) {
+  const date = new Date(dateString);
+  const now = new Date();
+  const diffInSeconds = Math.floor((now.getTime() - date.getTime()) / 1000);
+
+  if (diffInSeconds < 60) return 'just now';
+  const diffInMinutes = Math.floor(diffInSeconds / 60);
+  if (diffInMinutes < 60) return `${diffInMinutes}m ago`;
+  const diffInHours = Math.floor(diffInMinutes / 60);
+  if (diffInHours < 24) return `${diffInHours}h ago`;
+  const diffInDays = Math.floor(diffInHours / 24);
+  if (diffInDays < 7) return `${diffInDays}d ago`;
+  return date.toLocaleDateString();
+}
+
 export default function DashboardPage() {
+
   const { user } = useAuth();
   const [stats, setStats] = useState([
     { label: 'Total Projects', value: '...', icon: <FolderDot className="h-5 w-5 text-blue-500" />, change: 'Loading...' },
@@ -16,6 +40,7 @@ export default function DashboardPage() {
     { label: 'New Contacts', value: '...', icon: <Briefcase className="h-5 w-5 text-purple-500" />, change: 'Loading...' },
     { label: 'Career Apps', value: '...', icon: <Users className="h-5 w-5 text-orange-500" />, change: 'Loading...' },
   ]);
+  const [recentActivity, setRecentActivity] = useState<ActivityItem[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -63,6 +88,25 @@ export default function DashboardPage() {
             change: `${unreadCareers} new`
           },
         ]);
+
+        // Process Recent Activity
+        const allActivities: ActivityItem[] = [
+          ...contacts.map((c: any) => ({
+            id: `contact-${c.id}`,
+            type: 'contact' as const,
+            name: c.name || 'Unknown User',
+            date: c.createdAt || new Date().toISOString() // Fallback if missing
+          })),
+          ...careers.map((c: any) => ({
+            id: `career-${c.id}`,
+            type: 'career' as const,
+            name: c.fullName || c.name || 'Applicant',
+            date: c.createdAt || new Date().toISOString()
+          }))
+        ].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
+          .slice(0, 5);
+
+        setRecentActivity(allActivities);
       } catch (error) {
         console.error('Failed to fetch dashboard stats:', error);
       } finally {
@@ -135,15 +179,24 @@ export default function DashboardPage() {
                 <Activity className="h-4 w-4 text-muted-foreground" />
               </div>
               <div className="space-y-4">
-                {[1, 2, 3].map((_, i) => (
-                  <div key={i} className="flex items-start gap-4 border-b border-border/50 pb-4 last:border-0 last:pb-0">
-                    <div className="h-2 w-2 mt-2 rounded-full bg-primary" />
-                    <div className="space-y-1">
-                      <p className="text-sm font-medium text-foreground">New contact form submission</p>
-                      <p className="text-xs text-muted-foreground">2 hours ago</p>
+                {recentActivity.length > 0 ? (
+                  recentActivity.map((activity) => (
+                    <div key={activity.id} className="flex items-start gap-4 border-b border-border/50 pb-4 last:border-0 last:pb-0">
+                      <div className={`h-2 w-2 mt-2 rounded-full ${activity.type === 'contact' ? 'bg-purple-500' : 'bg-orange-500'}`} />
+                      <div className="space-y-1">
+                        <p className="text-sm font-medium text-foreground">
+                          {activity.type === 'contact' ? 'New Contact Submission' : 'New Career Application'}
+                        </p>
+                        <p className="text-xs text-muted-foreground flex items-center justify-between gap-4">
+                          <span className="truncate max-w-[150px]">{activity.name}</span>
+                          <span>{getRelativeTime(activity.date)}</span>
+                        </p>
+                      </div>
                     </div>
-                  </div>
-                ))}
+                  ))
+                ) : (
+                  <p className="text-sm text-muted-foreground py-4 text-center">No recent activity found.</p>
+                )}
               </div>
             </div>
           </div>
