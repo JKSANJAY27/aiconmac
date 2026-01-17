@@ -7,7 +7,7 @@ import React, { useState, useEffect } from 'react';
 import api from '@/lib/api';
 import { Plus, Edit2, Trash2, X, Upload, Eye, Image as ImageIcon, MoreVertical } from 'lucide-react';
 import Image from 'next/image';
-import { useForm, useFieldArray } from 'react-hook-form';
+import { useForm, useFieldArray, SubmitHandler, Resolver } from 'react-hook-form';
 import { z } from 'zod';
 import { zodResolver } from '@hookform/resolvers/zod';
 
@@ -29,6 +29,8 @@ const projectSchema = z.object({
     .min(3, "Slug is required")
     .regex(/^[a-z0-9-]+$/, "Slug must be lowercase alphanumeric with hyphens"),
   isPublished: z.boolean().default(false).optional(),
+  isPinned: z.boolean().default(false).optional(),
+  pinOrder: z.coerce.number().default(0).optional(),
   existingImages: z.array(z.object({
     id: z.string(),
     url: z.string().url(),
@@ -63,6 +65,8 @@ interface Project {
   category_ru?: string;
   slug: string;
   isPublished: boolean;
+  isPinned: boolean;
+  pinOrder: number;
   images: ProjectImage[];
   createdAt: string;
 }
@@ -90,9 +94,11 @@ export default function ProjectsPage() {
     setValue,
     formState: { errors, isSubmitting }
   } = useForm<ProjectFormInputs>({
-    resolver: zodResolver(projectSchema),
+    resolver: zodResolver(projectSchema) as Resolver<ProjectFormInputs>,
     defaultValues: {
       isPublished: false,
+      isPinned: false,
+      pinOrder: 0,
       existingImages: [],
     },
   });
@@ -157,6 +163,7 @@ export default function ProjectsPage() {
       badge: '', badge_ar: '', badge_ru: '',
       category: '', category_ar: '', category_ru: '',
       slug: '', isPublished: false,
+      isPinned: false, pinOrder: 0,
       existingImages: [],
       newImages: undefined,
     });
@@ -181,6 +188,8 @@ export default function ProjectsPage() {
       category_ru: project.category_ru,
       slug: project.slug,
       isPublished: project.isPublished,
+      isPinned: project.isPinned || false,
+      pinOrder: project.pinOrder || 0,
       existingImages: project.images.map(img => ({ id: img.id, url: img.url, altText: img.altText, order: img.order })),
       newImages: undefined,
     });
@@ -219,6 +228,8 @@ export default function ProjectsPage() {
 
       formData.append('slug', data.slug);
       formData.append('isPublished', String(data.isPublished));
+      formData.append('isPinned', String(data.isPinned));
+      formData.append('pinOrder', String(data.pinOrder || 0));
 
       data.existingImages?.forEach(img => formData.append('existingImageIds[]', img.id));
 
@@ -310,8 +321,13 @@ export default function ProjectsPage() {
                     <ImageIcon size={32} />
                   </div>
                 )}
-                <div className="absolute top-2 right-2">
-                  <span className={`inline-flex items-center rounded-full px-2 py-1 text-xs font-medium ring-1 ring-inset ${project.isPublished
+                <div className="absolute top-2 right-2 flex flex-col gap-1 items-end">
+                  {project.isPinned && (
+                    <span className="inline-flex items-center rounded-full px-2 py-1 text-xs font-medium bg-blue-50 text-blue-700 ring-1 ring-inset ring-blue-600/20 shadow-sm">
+                      Pinned {project.pinOrder > 0 && <span>#{project.pinOrder}</span>}
+                    </span>
+                  )}
+                  <span className={`inline-flex items-center rounded-full px-2 py-1 text-xs font-medium ring-1 ring-inset shadow-sm ${project.isPublished
                     ? 'bg-green-50 text-green-700 ring-green-600/20'
                     : 'bg-yellow-50 text-yellow-800 ring-yellow-600/20'
                     }`}>
@@ -522,19 +538,41 @@ export default function ProjectsPage() {
                   </div>
                 </div>
 
-                <div className="grid gap-4 sm:grid-cols-2">
-                  <div>
-                    <div className="flex items-center space-x-2 mt-4">
-                      <input
-                        type="checkbox"
-                        id="isPublished"
-                        {...register('isPublished')}
-                        className="h-4 w-4 rounded border-input text-primary focus:ring-ring"
-                      />
-                      <label htmlFor="isPublished" className="text-sm font-medium text-foreground">Publish Project</label>
-                    </div>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-6 p-4 rounded-lg bg-muted/20 border border-border">
+                  <div className="flex items-center space-x-2">
+                    <input
+                      type="checkbox"
+                      id="isPublished"
+                      {...register('isPublished')}
+                      className="h-4 w-4 rounded border-input text-primary focus:ring-ring cursor-pointer"
+                    />
+                    <label htmlFor="isPublished" className="text-sm font-medium text-foreground cursor-pointer">Publish Project</label>
+                  </div>
+
+                  <div className="flex items-center space-x-2">
+                    <input
+                      type="checkbox"
+                      id="isPinned"
+                      {...register('isPinned')}
+                      className="h-4 w-4 rounded border-input text-primary focus:ring-ring cursor-pointer"
+                    />
+                    <label htmlFor="isPinned" className="text-sm font-medium text-foreground cursor-pointer">Pin Project (Featured)</label>
                   </div>
                 </div>
+
+                {watch("isPinned") && (
+                  <div className="mt-4 animate-in fade-in slide-in-from-top-2 duration-300">
+                    <label className="text-sm font-medium text-foreground">Display Order</label>
+                    <input
+                      type="number"
+                      {...register('pinOrder', { valueAsNumber: true })}
+                      className="mt-1 block w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                      placeholder="e.g. 1"
+                    />
+                    <p className="text-xs text-muted-foreground mt-1">Lower numbers appear first among pinned projects.</p>
+                    {errors.pinOrder && <p className="mt-1 text-xs text-destructive">{errors.pinOrder.message}</p>}
+                  </div>
+                )}
 
                 <div>
                   <label className="text-sm font-medium text-foreground">Slug</label>
