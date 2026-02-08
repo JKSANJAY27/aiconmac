@@ -17,7 +17,7 @@ import {
   LayoutDashboard,
   Building2,
   FileText,
-  UserPlus
+  UserCog
 } from 'lucide-react';
 
 interface NavItemProps {
@@ -77,7 +77,7 @@ export default function AdminLayout({ children }: { children: ReactNode }) {
     { href: '/dashboard/contacts', icon: <Briefcase size={20} />, label: 'Contact Forms', roles: ['ADMIN', 'EDITOR', 'VIEWER'] },
     { href: '/dashboard/careers', icon: <Users size={20} />, label: 'Career Submissions', roles: ['ADMIN', 'EDITOR'] },
     { href: '/dashboard/brochure-requests', icon: <FileText size={20} />, label: 'Brochure Requests', roles: ['ADMIN', 'EDITOR', 'VIEWER'] },
-    { href: '/dashboard/users/create', icon: <UserPlus size={20} />, label: 'Create User', roles: ['ADMIN'] },
+    { href: '/dashboard/users', icon: <UserCog size={20} />, label: 'User Management', roles: ['ADMIN'] },
   ];
 
   const filteredNavItems = navItems.filter(item => user && item.roles.includes(user.role));
