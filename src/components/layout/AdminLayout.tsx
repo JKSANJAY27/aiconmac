@@ -15,7 +15,9 @@ import {
   ChevronLeft,
   Menu,
   LayoutDashboard,
-  Building2
+  Building2,
+  FileText,
+  UserPlus
 } from 'lucide-react';
 
 interface NavItemProps {
@@ -74,6 +76,8 @@ export default function AdminLayout({ children }: { children: ReactNode }) {
     { href: '/dashboard/testimonials', icon: <MessageSquare size={20} />, label: 'Testimonials', roles: ['ADMIN', 'EDITOR', 'VIEWER'] },
     { href: '/dashboard/contacts', icon: <Briefcase size={20} />, label: 'Contact Forms', roles: ['ADMIN', 'EDITOR', 'VIEWER'] },
     { href: '/dashboard/careers', icon: <Users size={20} />, label: 'Career Submissions', roles: ['ADMIN', 'EDITOR'] },
+    { href: '/dashboard/brochure-requests', icon: <FileText size={20} />, label: 'Brochure Requests', roles: ['ADMIN', 'EDITOR', 'VIEWER'] },
+    { href: '/dashboard/users/create', icon: <UserPlus size={20} />, label: 'Create User', roles: ['ADMIN'] },
   ];
 
   const filteredNavItems = navItems.filter(item => user && item.roles.includes(user.role));
