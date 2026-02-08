@@ -9,6 +9,9 @@ const inter = Inter({ subsets: ['latin'] });
 export const metadata = {
   title: 'Aiconmac Models - Company Portal',
   description: 'Admin panel for Aiconmac Models content management',
+  icons: {
+    icon: '/images/loader-logo.jpg',
+  },
 };
 
 export default function RootLayout({
